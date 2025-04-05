@@ -145,7 +145,7 @@ class RecordingBase:
         }
         return {"path": self.path, "config": config, "detections": self.detections}
 
-    def process_audio_data(self, rate):
+    def process_audio_data(self, rate, verbose=False):
         # Split audio into 3-second chunks
 
         # Split signal with overlap
@@ -170,7 +170,8 @@ class RecordingBase:
 
         self.chunks = chunks
 
-        print("read_audio_data: complete, read ", str(len(self.chunks)), "chunks.")
+        if verbose:
+            print("read_audio_data: complete, read ", str(len(self.chunks)), "chunks.")
 
     def get_extract_array(self, start_sec, end_sec):
         # Returns ndarray trimmed for start_sec:end_sec
@@ -298,8 +299,9 @@ class Recording(RecordingBase):
     def filename(self):
         return path.basename(self.path)
 
-    def read_audio_data(self):
-        print("read_audio_data")
+    def read_audio_data(self, verbose=False):
+        if verbose:
+            print("read_audio_data")
         # Open file with librosa (uses ffmpeg or libav)
         try:
             self.ndarray, rate = librosa.load(
@@ -389,8 +391,9 @@ class RecordingFileObject(RecordingBase):
     def filename(self):
         return "File Object"
 
-    def read_audio_data(self):
-        print("read_audio_data")
+    def read_audio_data(self, verbose=False):
+        if verbose:
+            print("read_audio_data")
         # Open file with librosa
         try:
             self.ndarray, rate = librosa.load(
@@ -478,9 +481,10 @@ class LargeRecording(Recording):
         self.embeddings_list = self.analyzer.embeddings
         self.embeddings_extracted = True
 
-    def get_extract_array(self, start_sec, end_sec):
+    def get_extract_array(self, start_sec, end_sec, verbose=False):
         # Returns ndarray trimmed for start_sec:end_sec
-        print(start_sec, end_sec)
+        if verbose:
+            print(start_sec, end_sec)
         sr = SAMPLE_RATE
         audio_chunk, _ = librosa.load(
             self.path,
@@ -545,8 +549,9 @@ class MultiProcessRecording(RecordingBase):
     def filename(self):
         return path.basename(self.path)
 
-    def read_audio_data(self):
-        print("read_audio_data")
+    def read_audio_data(self, verbose=False):
+        if verbose:
+            print("read_audio_data")
         # Open file with librosa (uses ffmpeg or libav)
         try:
             self.ndarray, rate = librosa.load(

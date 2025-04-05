@@ -39,7 +39,7 @@ class SpeciesList:
 
         self.load_species_list_model()
 
-    def return_list(self, lon=None, lat=None, date=None, week_48=-1, threshold=0.3):
+    def return_list(self, lon=None, lat=None, date=None, week_48=-1, threshold=0.3, verbose=False):
         # Returns the list in the format preferred by BirdNET Analyzers.
         # ['Haemorhous mexicanus_House Finch', 'Aphelocoma californica_California Scrub-Jay']
 
@@ -58,7 +58,8 @@ class SpeciesList:
             # Convert date to week_48 format for the Analyzer models.
             self.week_48 = return_week_48_from_datetime(self.date)
 
-        print(self.week_48)
+        if verbose:
+            print(self.week_48)
 
         sample = np.expand_dims(
             np.array(
@@ -93,11 +94,13 @@ class SpeciesList:
                 }
                 species_list.append(item)
 
-        print(len(species_list), "species loaded.")
+        if verbose:
+            print(len(species_list), "species loaded.")
         return species_list
 
-    def load_species_list_model(self):
-        print("load_species_list_model")
+    def load_species_list_model(self, verbose=False):
+        if verbose:
+            print("load_species_list_model")
 
         model_path = SPECIES_MODEL_PATH
         num_threads = 1  # Default from BN-A config
@@ -114,16 +117,18 @@ class SpeciesList:
         self.meta_input_layer_index = self.meta_input_details[0]["index"]
         self.meta_output_layer_index = self.meta_output_details[0]["index"]
 
-        print("Meta model loaded.")
+        if verbose:
+            print("Meta model loaded.")
 
-    def load_labels(self):
+    def load_labels(self, verbose=False):
         labels_file_path = LABEL_PATH
         labels = []
         with open(labels_file_path, "r") as lfile:
             for line in lfile.readlines():
                 labels.append(line.replace("\n", ""))
         self.labels = labels
-        print("Labels loaded.")
+        if verbose:
+            print("Labels loaded.")
 
     def return_list_for_analyzer(
         self, lon=None, lat=None, date=None, week_48=-1, threshold=0.3

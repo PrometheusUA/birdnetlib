@@ -98,8 +98,9 @@ class DirectoryAnalyzer:
         self.on_analyze_directory_complete(self.directory_recordings)
 
 
-def process_from_queue(queue_item, analyzers=None):
-    print("process_from_queue")
+def process_from_queue(queue_item, analyzers=None, verbose=False):
+    if verbose:
+        print("process_from_queue")
 
     try:
         recording_config, analyzer_args = queue_item
@@ -114,7 +115,8 @@ def process_from_queue(queue_item, analyzers=None):
     if not analyzers:
         # Init the analyzers themselves, pass required kwargs
         analyzers = []
-        print("Initializing analyzer(s)")
+        if verbose:
+            print("Initializing analyzer(s)")
         for i in analyzer_args:
             if i["model_name"] == "BirdNET-Lite":
                 from birdnetlib.analyzer_lite import LiteAnalyzer
@@ -150,7 +152,8 @@ def process_from_queue(queue_item, analyzers=None):
             recording.analyze()
             recordings.append(recording.as_dict)
         except BaseException as error:
-            print(recording, error)
+            if verbose:
+                print(recording, error)
             recordings.append(
                 {
                     "path": file_path,

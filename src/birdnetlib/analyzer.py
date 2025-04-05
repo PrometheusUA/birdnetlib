@@ -136,32 +136,36 @@ class Analyzer:
             self.has_custom_species_list = True
             self.custom_species_list = custom_species_list
 
-    def check_for_model_files(self):
+    def check_for_model_files(self, verbose=False):
         # Check if the models have already been downloaded.
         version_model_path = os.path.join(
             os.path.dirname(__file__),
             f"models/analyzer/{self.version}/Model_FP32.tflite",
         )
-        print(version_model_path)
+        if verbose:
+            print(version_model_path)
 
         version_labels_path = os.path.join(
             os.path.dirname(__file__),
             f"models/analyzer/{self.version}/Labels.txt",
         )
-        print(version_labels_path)
+        if verbose:
+            print(version_labels_path)
 
         version_metadata_path = os.path.join(
             os.path.dirname(__file__),
             f"models/analyzer/{self.version}/metadata.json",
         )
-        print(version_metadata_path)
+        if verbose:
+            print(version_metadata_path)
 
         if (
             os.path.exists(version_model_path)
             and os.path.exists(version_labels_path)
             and os.path.exists(version_metadata_path)
         ):
-            print(f"{self.version} Model and Labels are loaded.")
+            if verbose:
+                print(f"{self.version} Model and Labels are loaded.")
             self.model_path = version_model_path
             self.label_path = version_labels_path
             # Set the version_date.
@@ -184,9 +188,11 @@ class Analyzer:
             version_data = next(
                 (i for i in data if i["version"] == str(self.version)), None
             )
-            pprint(version_data)
+            if verbose:
+                pprint(version_data)
         else:
-            print("Failed to download versions file.")
+            if verbose:
+                print("Failed to download versions file.")
 
         if not version_data:
             raise Exception("No matching version could be found.")
@@ -211,29 +217,35 @@ class Analyzer:
         # Download the model.
         model_url = f"{versions_root}/{version_data['model_fp32']}"
         if not os.path.exists(version_model_path):
-            print("BirdNET version model is missing. Downloading now.")
+            if verbose:
+                print("BirdNET version model is missing. Downloading now.")
             response = requests.get(model_url)
             if response.status_code == 200:
                 with open(version_model_path, "wb") as file:
                     file.write(response.content)
-                print("BirdNET model downloaded successfully.")
+                if verbose:
+                    print("BirdNET model downloaded successfully.")
                 self.model_download_was_required = True
                 self.model_path = version_model_path
             else:
-                print("Failed to download the file.")
+                if verbose:
+                    print("Failed to download the file.")
 
         # Download the labels.
         labels_url = f"{versions_root}/{version_data['labels']}"
         if not os.path.exists(version_labels_path):
-            print("BirdNET version label file is missing. Downloading now.")
+            if verbose:
+                print("BirdNET version label file is missing. Downloading now.")
             response = requests.get(labels_url)
             if response.status_code == 200:
                 with open(version_labels_path, "wb") as file:
                     file.write(response.content)
-                print("BirdNET labels downloaded successfully.")
+                if verbose:
+                    print("BirdNET labels downloaded successfully.")
                 self.label_path = version_labels_path
             else:
-                print("Failed to download the file.")
+                if verbose:
+                    print("Failed to download the file.")
 
     @property
     def detections(self):
@@ -293,15 +305,18 @@ class Analyzer:
         lat=None,
         week_48=None,
         filter_threshold=LOCATION_FILTER_THRESHOLD,
+        verbose=False,
     ):
-        print("return_predicted_species_list")
+        if verbose:
+            print("return_predicted_species_list")
 
         return self.species_class.return_list_for_analyzer(
             lat=lat, lon=lon, week_48=week_48, threshold=filter_threshold
         )
 
-    def set_predicted_species_list_from_position(self, recording):
-        print("set_predicted_species_list_from_position")
+    def set_predicted_species_list_from_position(self, recording, verbose=False):
+        if verbose:
+            print("set_predicted_species_list_from_position")
 
         # Check to see if this species list has been previously cached.
         list_key = f"list-{recording.lon}-{recording.lat}-{recording.week_48}"
@@ -320,8 +335,9 @@ class Analyzer:
         # Save to analyzer's cache.
         self.cached_species_lists[list_key] = species_list
 
-    def analyze_recording(self, recording):
-        print("analyze_recording", recording.filename)
+    def analyze_recording(self, recording, verbose=False):
+        if verbose:
+            print("analyze_recording", recording.filename)
 
         if self.has_custom_species_list and recording.lon and recording.lat:
             raise ValueError(
@@ -330,7 +346,8 @@ class Analyzer:
 
         # If recording has lon/lat, load cached list or predict a new species list.
         if recording.lon and recording.lat and self.classifier_model_path == None:
-            print("recording has lon/lat")
+            if verbose:
+                print("recording has lon/lat")
             self.set_predicted_species_list_from_position(recording)
 
         start = 0
@@ -363,8 +380,9 @@ class Analyzer:
         self.results = results
         recording.detection_list = self.detections
 
-    def extract_embeddings_for_recording(self, recording):
-        print("extract_embeddings_for_recording", recording.filename)
+    def extract_embeddings_for_recording(self, recording, verbose=False):
+        if verbose:
+            print("extract_embeddings_for_recording", recording.filename)
         start = 0
         end = recording.sample_secs
         results = []
@@ -379,8 +397,9 @@ class Analyzer:
 
         self.embeddings = results
 
-    def load_model(self):
-        print("load model", not self.use_custom_classifier)
+    def load_model(self, verbose=False):
+        if verbose:
+            print("load model", not self.use_custom_classifier)
         # Load TFLite model and allocate tensors.
         num_threads = 1  # Default from BN-A config
         self.interpreter = tflite.Interpreter(
@@ -401,30 +420,35 @@ class Analyzer:
         else:
             self.output_layer_index = self.output_details[0]["index"]
 
-        print("Model loaded.")
+        if verbose:
+            print("Model loaded.")
 
-    def load_labels(self):
+    def load_labels(self, verbose=False):
         labels_file_path = self.label_path
         if self.classifier_labels_path:
-            print("loading custom classifier labels")
+            if verbose:
+                print("loading custom classifier labels")
             labels_file_path = self.classifier_labels_path
         labels = []
         with open(labels_file_path, "r") as lfile:
             for line in lfile.readlines():
                 labels.append(line.replace("\n", ""))
         self.labels = labels
-        print("Labels loaded.")
+        if verbose:
+            print("Labels loaded.")
 
-    def load_custom_list(self):
+    def load_custom_list(self, verbose=False):
         species_list = []
         if os.path.isfile(self.custom_species_list_path):
             with open(self.custom_species_list_path, "r") as csfile:
                 for line in csfile.readlines():
-                    print(line)
+                    if verbose:
+                        print(line)
                     species_list.append(line.replace("\r", "").replace("\n", ""))
 
         self.custom_species_list = species_list
-        print(len(species_list), "species loaded.")
+        if verbose:
+            print(len(species_list), "species loaded.")
 
     # Custom models.
     def _return_embeddings(self, data):
@@ -473,8 +497,9 @@ class Analyzer:
             )
         return prediction
 
-    def load_custom_models(self):
-        print("load_custom_models")
+    def load_custom_models(self, verbose=False):
+        if verbose:
+            print("load_custom_models")
         # Load TFLite model and allocate tensors.
         model_path = self.classifier_model_path
         num_threads = 1  # Default from BN-A config
@@ -491,7 +516,8 @@ class Analyzer:
         self.custom_input_layer_index = self.custom_input_details[0]["index"]
         self.custom_output_layer_index = self.custom_output_details[0]["index"]
 
-        print("Custom model loaded.")
+        if verbose:
+            print("Custom model loaded.")
 
 
 class LargeRecordingAnalyzer(Analyzer):
@@ -511,7 +537,7 @@ class LargeRecordingAnalyzer(Analyzer):
             version,
         )
 
-    def analyze_recording(self, recording):
+    def analyze_recording(self, recording, verbose=False):
         # print("analyze_recording, large mode", recording.filename)
 
         if self.has_custom_species_list and recording.lon and recording.lat:
@@ -521,7 +547,8 @@ class LargeRecordingAnalyzer(Analyzer):
 
         # If recording has lon/lat, load cached list or predict a new species list.
         if recording.lon and recording.lat and self.classifier_model_path is None:
-            print("recording has lon/lat")
+            if verbose:
+                print("recording has lon/lat")
             self.set_predicted_species_list_from_position(recording)
 
         start = 0
@@ -569,8 +596,9 @@ class LargeRecordingAnalyzer(Analyzer):
         self.results = results
         recording.detection_list = self.detections
 
-    def extract_embeddings_for_recording(self, recording):
-        print("extract_embeddings_for_recording", recording.filename)
+    def extract_embeddings_for_recording(self, recording, verbose=False):
+        if verbose:
+            print("extract_embeddings_for_recording", recording.filename)
         start = 0
         end = recording.sample_secs
         results = []

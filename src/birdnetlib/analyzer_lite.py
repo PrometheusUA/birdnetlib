@@ -52,31 +52,37 @@ class LiteAnalyzer:
         if custom_species_list:
             self.custom_species_list = custom_species_list
 
-    def check_for_model_files(self):
+    def check_for_model_files(self, verbose=False):
         # Necessitated by PyPI's limit of 100MB per library.
         # This check will only download the file once.
         if not os.path.exists(MODEL_PATH):
-            print("BirdNET-Lite model is missing. Downloading now.")
+            if verbose:
+                print("BirdNET-Lite model is missing. Downloading now.")
             response = requests.get(MODEL_URL)
             if response.status_code == 200:
                 with open(MODEL_PATH, "wb") as file:
                     file.write(response.content)
-                print("BirdNET-Lite model downloaded successfully.")
+                if verbose:
+                    print("BirdNET-Lite model downloaded successfully.")
                 self.model_download_was_required = True
             else:
-                print("Failed to download the file.")
+                if verbose:
+                    print("Failed to download the file.")
 
         if not os.path.exists(LABEL_PATH):
-            print("BirdNET-Lite labels are missing. Downloading now.")
+            if verbose:
+                print("BirdNET-Lite labels are missing. Downloading now.")
             response = requests.get(LABEL_URL)
             if response.status_code == 200:
                 with open(LABEL_PATH, "wb") as file:
                     file.write(response.content)
-                print("BirdNET-Lite labels downloaded successfully.")
+                if verbose:
+                    print("BirdNET-Lite labels downloaded successfully.")
             else:
-                print("Failed to download the file.")
+                if verbose:
+                    print("Failed to download the file.")
 
-    def load_lite_model(self):
+    def load_lite_model(self, verbose=False):
         self.interpreter = tflite.Interpreter(model_path=MODEL_PATH)
         self.interpreter.allocate_tensors()
 
@@ -93,16 +99,18 @@ class LiteAnalyzer:
             for line in lfile.readlines():
                 self.classes.append(line.replace("\n", ""))
 
-        print("Lite model loaded")
+        if verbose:
+            print("Lite model loaded")
 
-    def load_custom_list(self, custom_species_list_path=None):
+    def load_custom_list(self, custom_species_list_path=None, verbose=False):
         if custom_species_list_path:
             self.custom_species_list_path = custom_species_list_path
         slist = []
         if os.path.isfile(self.custom_species_list_path):
             with open(self.custom_species_list_path, "r") as csfile:
                 for line in csfile.readlines():
-                    print(line)
+                    if verbose:
+                        print(line)
                     slist.append(line.replace("\r", "").replace("\n", ""))
 
         self.custom_species_list = slist
@@ -156,13 +164,15 @@ class LiteAnalyzer:
         # Only return first the top ten results
         return p_sorted[:10]
 
-    def analyze_recording(self, recording):
-        print("analyze_recording", recording.path)
+    def analyze_recording(self, recording, verbose=False):
+        if verbose:
+            print("analyze_recording", recording.path)
 
         detections = {}
         detection_list = []
         start = time.time()
-        print("ANALYZING AUDIO...", end=" ", flush=True)
+        if verbose:
+            print("ANALYZING AUDIO...", end=" ", flush=True)
 
         # Convert and prepare metadata
         lat = recording.lat or -1  # lite uses -1 for none here.
@@ -187,7 +197,8 @@ class LiteAnalyzer:
             detection_list.append(detection)
             pred_start = pred_end - recording.overlap
 
-        print("DONE! Time", int((time.time() - start) * 10) / 10.0, "SECONDS")
+        if verbose:
+            print("DONE! Time", int((time.time() - start) * 10) / 10.0, "SECONDS")
 
         recording.detection_dict = detections
         recording.detection_list = detection_list
